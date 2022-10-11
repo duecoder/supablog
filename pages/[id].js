@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import supabase from "../utils/supabase";
 
 export async function getServerSideProps({ params }) {
@@ -19,6 +20,21 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function PostPage({ post }) {
+  useEffect(() => {
+    const subscription = supabase
+      .channel("public:comments")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "comments" },
+        (payload) => {
+          console.log("Change received!", payload);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(subscription);
+  }, []);
+
   return (
     <div>
       <h1>{post.title}</h1>
